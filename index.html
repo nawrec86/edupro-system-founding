@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okul Yönetim Sistemi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+        .btn-small { padding: 8px 16px; font-size: 14px; }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 14px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .success-msg, .error-msg, .info-msg {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .info-msg {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card p {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Okul Yönetim Sistemi</h1>
+            <p style="font-size: 18px; opacity: 0.9;">Modern, Hızlı ve Güvenli</p>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Toplam Öğrenci</h3>
+                <p id="total-students">0</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <h3>Aktif Öğrenci</h3>
+                <p id="active-students">0</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <h3>Toplam Gelir</h3>
+                <p id="total-revenue">$0</p>
+            </div>
+        </div>
+
+        <!-- Supabase Bağlantı Durumu -->
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">📡 Veritabanı Durumu</h2>
+            <div id="db-status" class="info-msg">
+                <strong>⚠️ Supabase henüz yapılandırılmadı!</strong><br>
+                Veritabanı bağlantısını kurmak için Supabase ayarlarını yapın.
+            </div>
+        </div>
+
+        <!-- Öğrenci Ekleme Formu -->
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">➕ Yeni Öğrenci Ekle</h2>
+            
+            <div id="success-msg" class="success-msg" style="display: none;">
+                ✅ Öğrenci başarıyla eklendi!
+            </div>
+            <div id="error-msg" class="error-msg" style="display: none;">
+                ❌ Hata oluştu!
+            </div>
+            
+            <form id="student-form">
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label>İsim *</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Soyisim *</label>
+                        <input type="text" class="form-control" id="surname" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pasaport No</label>
+                        <input type="text" class="form-control" id="passport">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Sınıf *</label>
+                        <select class="form-control" id="grade" required>
+                            <option value="">Seçin</option>
+                            <option value="9">9. Sınıf</option>
+                            <option value="10">10. Sınıf</option>
+                            <option value="11">11. Sınıf</option>
+                            <option value="12">12. Sınıf</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Müfredat *</label>
+                        <select class="form-control" id="curriculum" required>
+                            <option value="">Seçin</option>
+                            <option value="National">National Curriculum</option>
+                            <option value="Cambridge">Cambridge Curriculum</option>
+                            <option value="IB">IB Curriculum</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ücret ($) *</label>
+                        <input type="number" class="form-control" id="fee" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Telefon</label>
+                        <input type="tel" class="form-control" id="phone">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success">💾 Öğrenci Kaydet</button>
+            </form>
+        </div>
+
+        <!-- Öğrenci Listesi -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>👨‍🎓 Öğrenci Listesi</h2>
+                <button onclick="loadStudents()" class="btn">🔄 Yenile</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>İsim Soyisim</th>
+                        <th>Pasaport</th>
+                        <th>Sınıf</th>
+                        <th>Müfredat</th>
+                        <th>Ücret</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="students-table">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 50px; color: #999; font-size: 16px;">
+                            📋 Henüz öğrenci eklenmedi
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ BURAYA SUPABASE BİLGİLERİNİZİ EKLEYECEKSİNİZ
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        let supabase = null;
+        
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Supabase kontrolü
+            if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+                document.getElementById('db-status').innerHTML = `
+                    <strong>⚠️ Supabase Yapılandırması Gerekli</strong><br><br>
+                    <strong>Adımlar:</strong><br>
+                    1. supabase.com adresine gidin<br>
+                    2. Yeni proje oluşturun<br>
+                    3. Project URL ve anon key'i alın<br>
+                    4. index.html dosyasındaki SUPABASE_URL ve SUPABASE_KEY değerlerini güncelleyin
+                `;
+                return;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                // Bağlantı testi
+                const { data, error } = await supabase.from('students').select('count');
+                
+                if (error) throw error;
+                
+                document.getElementById('db-status').innerHTML = `
+                    <strong style="color: #28a745;">✅ Veritabanı bağlantısı başarılı!</strong><br>
+                    Sistem hazır ve çalışıyor.
+                `;
+                document.getElementById('db-status').className = 'success-msg';
+                
+                loadStudents();
+                updateStats();
+            } catch (error) {
+                document.getElementById('db-status').innerHTML = `
+                    <strong>❌ Bağlantı Hatası</strong><br>
+                    ${error.message}<br><br>
+                    <small>Supabase ayarlarını kontrol edin ve students tablosunun oluşturulduğundan emin olun.</small>
+                `;
+                document.getElementById('db-status').className = 'error-msg';
+            }
+        });
+        
+        // Form gönderimi
+        document.getElementById('student-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!supabase) {
+                showError('Supabase yapılandırılmadı!');
+                return;
+            }
+            
+            const studentData = {
+                name: document.getElementById('name').value,
+                surname: document.getElementById('surname').value,
+                passport: document.getElementById('passport').value || null,
+                grade: document.getElementById('grade').value,
+                curriculum: document.getElementById('curriculum').value,
+                fee: parseFloat(document.getElementById('fee').value),
+                email: document.getElementById('email').value || null,
+                phone: document.getElementById('phone').value || null,
+                status: 'active',
+                created_at: new Date().toISOString()
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .insert([studentData])
+                    .select();
+                
+                if (error) throw error;
+                
+                showSuccess('Öğrenci başarıyla eklendi!');
+                document.getElementById('student-form').reset();
+                loadStudents();
+                updateStats();
+            } catch (error) {
+                showError('Ekleme hatası: ' + error.message);
+            }
+        });
+        
+        // Öğrencileri yükle
+        async function loadStudents() {
+            if (!supabase) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('students-table');
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 50px; color: #999; font-size: 16px;">📋 Henüz öğrenci eklenmedi</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(student => `
+                    <tr>
+                        <td><strong>#${student.id}</strong></td>
+                        <td><strong>${student.name} ${student.surname}</strong></td>
+                        <td>${student.passport || '-'}</td>
+                        <td>${student.grade}. Sınıf</td>
+                        <td>${student.curriculum}</td>
+                        <td><strong>$${student.fee.toFixed(2)}</strong></td>
+                        <td><span class="status-badge status-${student.status}">${student.status === 'active' ? '✅ Aktif' : '⏸️ Pasif'}</span></td>
+                        <td>
+                            <button class="btn btn-danger btn-small" onclick="deleteStudent(${student.id})">🗑️ Sil</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Yükleme hatası:', error);
+                showError('Öğrenciler yüklenemedi: ' + error.message);
+            }
+        }
+        
+        // İstatistikleri güncelle
+        async function updateStats() {
+            if (!supabase) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('*');
+                
+                if (error) throw error;
+                
+                const total = data.length;
+                const active = data.filter(s => s.status === 'active').length;
+                const revenue = data.reduce((sum, s) => sum + (s.fee || 0), 0);
+                
+                document.getElementById('total-students').textContent = total;
+                document.getElementById('active-students').textContent = active;
+                document.getElementById('total-revenue').textContent = '$' + revenue.toFixed(2);
+            } catch (error) {
+                console.error('İstatistik hatası:', error);
+            }
+        }
+        
+        // Öğrenci sil
+        async function deleteStudent(id) {
+            if (!confirm('Bu öğrenciyi silmek istediğinizden emin misiniz?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('students')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showSuccess('Öğrenci silindi');
+                loadStudents();
+                updateStats();
+            } catch (error) {
+                showError('Silme hatası: ' + error.message);
+            }
+        }
+        
+        // Mesajlar
+        function showSuccess(text) {
+            const msg = document.getElementById('success-msg');
+            msg.textContent = '✅ ' + text;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 4000);
+        }
+        
+        function showError(text) {
+            const msg = document.getElementById('error-msg');
+            msg.textContent = '❌ ' + text;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 6000);
+        }
+    </script>
+</body>
+</html>
